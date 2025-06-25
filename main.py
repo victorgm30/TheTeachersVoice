@@ -1,16 +1,23 @@
 from fastapi import FastAPI, WebSocket
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/")
-async def get():
-    return HTMLResponse(open("static/index.html").read())
-
 connections = []
+
+@app.get("/")
+async def root():
+    return HTMLResponse("<h3>Bem-vindo ao Voz na Sala! Acesse /professora ou /aluno</h3>")
+
+@app.get("/professora")
+async def professora():
+    return HTMLResponse(open("static/professora.html").read())
+
+@app.get("/aluno")
+async def aluno():
+    return HTMLResponse(open("static/aluno.html").read())
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

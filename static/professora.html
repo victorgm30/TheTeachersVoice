@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Professora</title>
+</head>
+<body>
+  <h2>Professora - Transmissão de Voz</h2>
+  <button onclick="start()">Iniciar</button>
+
+  <script>
+    const ws = new WebSocket(`wss://${location.host}/ws`);
+    const pc = new RTCPeerConnection();
+
+    ws.onmessage = async (event) => {
+      const data = JSON.parse(event.data);
+      if (data.answer) await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      if (data.candidate) await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+    };
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) ws.send(JSON.stringify({ candidate: event.candidate }));
+    };
+
+    async function start() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      ws.send(JSON.stringify({ offer }));
+    }
+  </script>
+</body>
+</html>

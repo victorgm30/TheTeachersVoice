@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Aluno</title>
+</head>
+<body>
+  <h2>Aluno - Aguardando transmissão da professora...</h2>
+
+  <script>
+    const ws = new WebSocket(`wss://${location.host}/ws`);
+    const pc = new RTCPeerConnection();
+
+    ws.onmessage = async (event) => {
+      const data = JSON.parse(event.data);
+      if (data.offer) {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        ws.send(JSON.stringify({ answer }));
+      }
+      if (data.candidate) await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+    };
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) ws.send(JSON.stringify({ candidate: event.candidate }));
+    };
+
+    pc.ontrack = (event) => {
+      const audio = new Audio();
+      audio.srcObject = event.streams[0];
+      audio.play();
+    };
+  </script>
+</body>
+</html>
